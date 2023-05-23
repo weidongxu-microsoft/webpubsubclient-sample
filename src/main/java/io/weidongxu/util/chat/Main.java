@@ -8,11 +8,14 @@ import com.azure.ai.openai.OpenAIClientBuilder;
 import com.azure.ai.openai.models.ChatCompletions;
 import com.azure.ai.openai.models.ChatCompletionsOptions;
 import com.azure.ai.openai.models.ChatMessage;
+import com.azure.ai.openai.models.ChatMessageDelta;
 import com.azure.ai.openai.models.ChatRole;
 import com.azure.core.credential.AzureKeyCredential;
 import com.azure.core.http.policy.HttpLogDetailLevel;
 import com.azure.core.http.policy.HttpLogOptions;
 import com.azure.core.util.Configuration;
+import com.azure.core.util.IterableStream;
+import com.azure.core.util.logging.ClientLogger;
 import com.azure.messaging.webpubsub.WebPubSubServiceAsyncClient;
 import com.azure.messaging.webpubsub.WebPubSubServiceClientBuilder;
 import com.azure.messaging.webpubsub.client.WebPubSubClient;
@@ -30,6 +33,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Main {
+
+    private static final ClientLogger LOGGER = new ClientLogger(Main.class);
 
     public static void main(String[] args) throws Exception {
 
@@ -69,9 +74,7 @@ public class Main {
                         client.stop();
                     } else {
                         List<ChatMessage> conversation = getConversation(text);
-                        String reply = complete(conversation);
-                        addReply(reply);
-                        client.sendToGroup(group, reply, new SendToGroupOptions().setNoEcho(true));
+                        streamCompletions(client, groupName, conversation);
                     }
                 }
             }
@@ -116,7 +119,7 @@ public class Main {
 
     private static OpenAIClient completionsClient;
 
-    private static String complete(List<ChatMessage> messages) {
+    private static void streamCompletions(WebPubSubClient client, String groupName, List<ChatMessage> messages) {
         final String model = "gpt-4";
 
         if (completionsClient == null) {
@@ -127,9 +130,29 @@ public class Main {
                     .buildClient();
         }
 
-        ChatCompletions completions = completionsClient.getChatCompletions(model,
+        IterableStream<ChatCompletions> completions = completionsClient.getChatCompletionsStream(model,
                 new ChatCompletionsOptions(messages)
                         .setMaxTokens(1024));
-        return completions.getChoices().get(0).getMessage().getContent();
+        StringBuilder reply = new StringBuilder();
+        StringBuilder line = new StringBuilder();
+        for (ChatCompletions item : completions) {
+            ChatMessageDelta message = item.getChoices().get(0).getDelta();
+            if (message != null && message.getContent() != null) {
+                LOGGER.info(message.getContent());
+
+                reply.append(message.getContent());
+                line.append(message.getContent());
+
+                if (message.getContent().endsWith("\n")) {
+                    client.sendToGroup(groupName, line.toString(), new SendToGroupOptions().setNoEcho(true));
+                    line = new StringBuilder();
+                }
+            }
+        }
+        if (line.length() > 0) {
+            client.sendToGroup(groupName, line.toString(), new SendToGroupOptions().setNoEcho(true));
+        }
+
+        addReply(reply.toString());
     }
 }
