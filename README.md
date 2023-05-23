@@ -6,6 +6,6 @@ Requires environment variable `ENDPOINT` and `API_KEY` for endpoint and API key 
 
 Requires environment variable `CONNECTION_STRING` for endpoint and credential of Azure Web PubSub resource.
 
-It assumes availability of "gpt-35-turbo" model in OpenAI resource.
+It assumes availability of "gpt-4" model in OpenAI resource.
 
 Run with `mvn exec:java`.
