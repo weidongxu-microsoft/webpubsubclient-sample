@@ -41,18 +41,18 @@
   <dependencies>
     <dependency>
       <groupId>com.azure</groupId>
-      <artifactId>azure-core</artifactId>
-      <version>1.37.0</version> <!-- {x-version-update;com.azure:azure-core;dependency} -->
+      <artifactId>azure-messaging-webpubsub-client</artifactId>
+      <version>1.0.0-beta.1</version>
     </dependency>
     <dependency>
       <groupId>com.azure</groupId>
-      <artifactId>azure-core-http-netty</artifactId>
-      <version>1.13.1</version> <!-- {x-version-update;com.azure:azure-core-http-netty;dependency} -->
+      <artifactId>azure-ai-openai</artifactId>
+      <version>1.0.0-beta.1</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
-      <version>1.7.36</version> <!-- {x-version-update;org.slf4j:slf4j-simple;external_dependency} -->
+      <version>1.7.36</version>
     </dependency>
   </dependencies>
   <build>
